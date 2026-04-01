@@ -12,7 +12,7 @@ Autonomous multi-agent system that builds a trustworthy knowledge base for RAG s
 The system uses 4 specialized AI agents that collaborate like a research team:
 
 - **Researcher** — creates and revises the research plan
-- **SME** — validates plans and sources using domain-specific rubrics
+- **SME [Subject Matter Expect]** — validates plans and sources using domain-specific rubrics
 - **Scraper** — collects approved source content using external tools
 - **Data Scientist** — cleans, chunks, embeds, and stores the final corpus in ChromaDB
 
