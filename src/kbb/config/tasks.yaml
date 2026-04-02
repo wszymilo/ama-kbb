@@ -7,6 +7,14 @@ research_task:
     A list with 10 bullet points of the most relevant information about {topic}
   agent: researcher
 
+research_plan_task:
+  description: >
+    Create a research plan to find the most relevant information about {topic}.
+    The plan should include the best sources to find the information, and the best way to extract it.
+  expected_output: >
+    A detailed research plan with the best sources and methods to find the most relevant information about {topic}.
+  agent: researcher
+
 reporting_task:
   description: >
     Review the context you got and expand each topic into a full section for a report.

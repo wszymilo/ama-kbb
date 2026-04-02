@@ -210,3 +210,5 @@ __marimo__/
 __pycache__/
 .DS_Store
 
+report.md
+planner.md
