@@ -1,0 +1,27 @@
+domain: sustainable packaging
+trusted_source_types:
+  - peer_reviewed_journal
+  - industry_report
+  - government_publication
+  - reputable_nonprofit
+preferred_institutions_publishers:
+  - "Journal of Cleaner Production"
+  - "Sustainability (MDPI)"
+  - "Ellen MacArthur Foundation"
+  - "US EPA"
+  - "UNEP"
+disallowed_source_patterns:
+  - "\.pdf$"  # Avoid undocumented PDFs
+  - "blog\.com"
+recency_expectations: "sources published within the last 3 years"
+key_terminology:
+  - "bio-based polymers"
+  - "recyclability"
+  - "life cycle assessment"
+  - "circular economy"
+  - "compostable materials"
+evidence_requirements:
+  - "quantitative LCA data"
+  - "case study results"
+  - "regulatory compliance data"
+  - "industry benchmarks"
