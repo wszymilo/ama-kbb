@@ -1,6 +1,7 @@
 import re
 
 from kbb.schemas.models import CleanDocument, ScrapedDocument
+from kbb.tools.utils import generate_document_id
 
 
 BOILERPLATE_PATTERNS = [
@@ -67,6 +68,7 @@ class DocumentCleaner:
             status="cleaned",
             source_url=document.source_url,
             title=document.title,
+            document_id=generate_document_id(document.source_url),
             cleaned_text=cleaned,
             filter_reason=None,
         )
@@ -79,6 +81,7 @@ class DocumentCleaner:
             status="filtered",
             source_url=document.source_url,
             title=document.title,
+            document_id=generate_document_id(document.source_url),
             cleaned_text="",
             filter_reason=reason,
         )

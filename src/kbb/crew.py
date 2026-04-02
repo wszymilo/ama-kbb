@@ -5,7 +5,6 @@ from crewai.agents.agent_builder.base_agent import BaseAgent
 from kbb.config import get_config
 
 
-
 @CrewBase
 class Kbb:
     """Kbb crew"""

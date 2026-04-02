@@ -72,6 +72,10 @@ class CleanDocument(BaseModel):
     )
     source_url: str = Field(..., description="Original source URL")
     title: Optional[str] = Field(None, description="Document title")
+    document_id: Optional[str] = Field(
+        None,
+        description="Unique identifier for the document (slugified URL or generated)",
+    )
     cleaned_text: str = Field(..., description="Sanitized and cleaned document text")
     filter_reason: Optional[str] = Field(
         None, description="Reason for filtering if status='filtered'"
