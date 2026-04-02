@@ -1,0 +1,24 @@
+domain: quantum error correction
+trusted_source_types:
+  - peer_reviewed_journal
+  - conference_proceedings
+  - arxiv_preprint
+preferred_institutions_publishers:
+  - "Nature Physics"
+  - "Physical Review Letters"
+  - "IEEE Quantum"
+  - "arXiv"
+disallowed_source_patterns:
+  - "\.pdf$"  # Avoid raw PDFs without metadata
+  - "blog\.com"
+recency_expectations: "sources published within the last 5 years"
+key_terminology:
+  - "surface code"
+  - "fault tolerance"
+  - "logical qubit"
+  - "threshold theorem"
+evidence_requirements:
+  - "experimental results"
+  - "simulation data"
+  - "mathematical proofs"
+  - "benchmark comparisons"
