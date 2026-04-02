@@ -1,9 +1,13 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional, Dict, Any
 
 from pydantic import BaseModel, Field
+
+
+def _utc_now() -> datetime:
+    return datetime.now(timezone.utc)
 
 
 class ResearchPlan(BaseModel):
@@ -14,7 +18,7 @@ class ResearchPlan(BaseModel):
         default_factory=list, description="List of search queries to explore"
     )
     created_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Timestamp of plan creation"
+        default_factory=_utc_now, description="Timestamp of plan creation"
     )
 
 
@@ -37,7 +41,7 @@ class SourceReview(BaseModel):
     )
     rationale: Optional[str] = Field(None, description="Explanation for the decision")
     reviewed_at: datetime = Field(
-        default_factory=datetime.utcnow, description="When the review was performed"
+        default_factory=_utc_now, description="When the review was performed"
     )
 
 
@@ -55,17 +59,25 @@ class ScrapedDocument(BaseModel):
         ..., description="Raw textual content retrieved from the source"
     )
     fetched_at: datetime = Field(
-        default_factory=datetime.utcnow, description="When the fetch occurred"
+        default_factory=_utc_now, description="When the fetch occurred"
     )
 
 
 class CleanDocument(BaseModel):
     """Document after cleaning and normalisation steps."""
 
+    status: str = Field(
+        ...,
+        description="Document status: 'cleaned' or 'filtered'",
+    )
     source_url: str = Field(..., description="Original source URL")
+    title: Optional[str] = Field(None, description="Document title")
     cleaned_text: str = Field(..., description="Sanitized and cleaned document text")
+    filter_reason: Optional[str] = Field(
+        None, description="Reason for filtering if status='filtered'"
+    )
     cleaned_at: datetime = Field(
-        default_factory=datetime.utcnow, description="When cleaning was performed"
+        default_factory=_utc_now, description="When cleaning was performed"
     )
 
 
@@ -81,7 +93,7 @@ class ChunkRecord(BaseModel):
         ..., description="Name of the ChromaDB collection the chunk belongs to"
     )
     chunked_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Timestamp of chunk creation"
+        default_factory=_utc_now, description="Timestamp of chunk creation"
     )
 
 
