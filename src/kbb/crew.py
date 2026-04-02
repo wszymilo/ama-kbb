@@ -2,9 +2,7 @@ from crewai import Agent, Crew, Process, Task
 from crewai.agents.agent_builder.base_agent import BaseAgent
 from crewai.project import CrewBase, agent, crew, task
 
-# If you want to run a snippet of code before or after the crew starts,
-# you can use the @before_kickoff and @after_kickoff decorators
-# https://docs.crewai.com/concepts/crews#example-crew-class-with-decorators
+from agents.researcher import ResearcherAgent
 from kbb.tools.shared_llm import SharedLLM
 
 @CrewBase
@@ -16,19 +14,12 @@ class Kbb:
 
     def __init__(self):
         self.shared_llm = SharedLLM()
-
-    # Learn more about YAML configuration files here:
-    # Agents: https://docs.crewai.com/concepts/agents#yaml-configuration-recommended
-    # Tasks: https://docs.crewai.com/concepts/tasks#yaml-configuration-recommended
-
-    # If you would like to add tools to your agents, you can learn more about it here:
-    # https://docs.crewai.com/concepts/agents#agent-tools
+    
     @agent
-    def researcher(self) -> Agent:
-        return Agent(
-            config=self.agents_config["researcher"],  # type: ignore[index]
-            verbose=True,
+    def researcher(self) -> ResearcherAgent:
+        return ResearcherAgent(
             llm=self.shared_llm,
+            config=self.agents_config["researcher"]
         )
 
     @agent
@@ -37,6 +28,13 @@ class Kbb:
             config=self.agents_config["reporting_analyst"],  # type: ignore[index]
             verbose=True,
             llm=self.shared_llm,
+        )
+    
+    @task
+    def research_plan_task(self) -> Task:
+        return Task(
+            config=self.tasks_config["research_plan_task"],
+            output_file="planner.md",
         )
 
     @task
@@ -59,5 +57,6 @@ class Kbb:
             agents=self.agents,
             tasks=self.tasks,
             process=Process.sequential,
+            task_order=["research_plan_task", "research_task", "reporting_task"],
             verbose=True,
         )

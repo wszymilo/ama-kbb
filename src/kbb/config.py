@@ -26,6 +26,7 @@ class Config:
 @lru_cache
 def get_config() -> Config:
     return Config(
+        # TODO: #37 No need for this as we already can parse this via config file
         OPENAI_API_KEY=os.getenv("OPENAI_API_KEY", ""),
         MODEL=os.getenv("MODEL", ""),
         EMBEDDING_MODEL=os.getenv("EMBEDDING_MODEL", "nomic-ai/nomic-embed-text-v1.5"),
