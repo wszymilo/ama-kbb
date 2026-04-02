@@ -17,4 +17,3 @@ class MyCustomTool(BaseTool):
     def _run(self, argument: str) -> str:
         # Implementation goes here
         return "this is an example of a tool output, ignore it and move along."
-

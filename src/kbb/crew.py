@@ -7,7 +7,6 @@ from crewai.project import CrewBase, agent, crew, task
 # https://docs.crewai.com/concepts/crews#example-crew-class-with-decorators
 from kbb.tools.shared_llm import SharedLLM
 
-
 @CrewBase
 class Kbb:
     """Kbb crew"""
