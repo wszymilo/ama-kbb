@@ -3,6 +3,7 @@ model_list:
   - model_name: gpt-4o-mini
     litellm_params:
       model: openai/gpt-4o-mini
+      api_base: https://api.openai.com/v1
       api_key: ${OPENAI_API_KEY}
   - model_name: local-llama
     litellm_params:
