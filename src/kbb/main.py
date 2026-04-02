@@ -16,13 +16,13 @@ app = typer.Typer()
 
 @app.command()
 def run(
-    topic: str = typer.Option(..., "--topic"),
-    verbose: bool = typer.Option(False, "--verbose"),
-    log_level: str = typer.Option("info", "--log-level"),
-    collection: str = typer.Option(None, "--collection"),
-    max_sources: int = typer.Option(5, "--max-sources"),
-    rubric: str = typer.Option(None, "--rubric"),
-    current_year: str = typer.Option(str(datetime.now().year), "--current-year")
+    topic: str = typer.Option(..., "--topic", help="The research topic to explore"),
+    verbose: bool = typer.Option(False, "--verbose", help="Enable verbose output"),
+    log_level: str = typer.Option("info", "--log-level", help="Set the logging level"),
+    collection: str = typer.Option(None, "--collection", help="Specify the collection"),
+    max_sources: int = typer.Option(5, "--max-sources", help="Maximum number of sources"),
+    rubric: str = typer.Option(None, "--rubric", help="Specify the rubric"),
+    current_year: str = typer.Option(str(datetime.now().year), "--current-year", help="Specify the current year")
 ):
     """
     Run the crew.
