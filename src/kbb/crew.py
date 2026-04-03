@@ -1,6 +1,8 @@
 """Simple Kbb workflow runner with revision loop."""
 
 import json
+from datetime import datetime
+from pathlib import Path
 from typing import Optional
 
 import yaml
@@ -8,7 +10,19 @@ from crewai import Agent, Task
 
 from kbb.tools.search import search
 from kbb.tools.rubric_loader import get_rubric_loader
-from kbb.schemas.models import ResearchPlan, PlanReview, ResearchPlanWithScrapedDocuments, ScrapedDocument, ScrapedDocumentList
+from kbb.tools.cleaning import DocumentCleaner
+from kbb.tools.chunking import DocumentChunker
+from kbb.storage.chroma_store import ChromaKBStore
+from kbb.schemas.models import (
+    ResearchPlan,
+    PlanReview,
+    ResearchPlanWithScrapedDocuments,
+    ScrapedDocument,
+    ScrapedDocumentList,
+    PipelineRunSummary,
+    ChunkRecord,
+    CleanDocument,
+)
 
 
 class KbbWorkflow:
@@ -110,7 +124,7 @@ class KbbWorkflow:
             llm=llm,
             verbose=True,
         )
-    
+
     def _scraper_agent(self) -> Agent:
         config = self._agents_config.get("scraper", {})
         role = config.get("role", "").replace("{topic}", self.topic)
@@ -153,7 +167,9 @@ class KbbWorkflow:
             self.current_plan = ResearchPlan.model_validate(result.pydantic)
         return result.raw if result.raw else str(result.pydantic)
 
-    def _run_plan_review_task(self, plan: ResearchPlanWithScrapedDocuments) -> PlanReview:
+    def _run_plan_review_task(
+        self, plan: ResearchPlanWithScrapedDocuments
+    ) -> PlanReview:
         """Execute plan_review_task and return result."""
         task_config = self._tasks_config.get("plan_review_task", {})
 
@@ -241,11 +257,15 @@ class KbbWorkflow:
 
         result = task.execute_sync()
         return result.raw if result.raw else str(result.pydantic)
-    
+
     def _scraper_task(self, urls: list[str]) -> ScrapedDocumentList:
         task_config = self._tasks_config.get("scraper_task", {})
 
-        description = task_config.get("description", "").replace("{topic}", self.topic).replace("{urls}", "\n".join(urls))
+        description = (
+            task_config.get("description", "")
+            .replace("{topic}", self.topic)
+            .replace("{urls}", "\n".join(urls))
+        )
 
         agent = self._scraper_agent()
         expected_output = task_config.get("expected_output", "")
@@ -261,8 +281,9 @@ class KbbWorkflow:
 
         if result.pydantic:
             self.scraped_docs = result.pydantic.documents
+            return result.pydantic
 
-        return result.raw if result.raw else str(result.pydantic)
+        return result.raw
 
     def _ask_human_decision(self) -> bool:
         """Ask human for decision after max revisions."""
@@ -319,6 +340,90 @@ Do you want to proceed with this plan anyway?
             self.workflow_aborted = True
             return False
 
+    def _execute_deterministic_phase(self) -> PipelineRunSummary:
+        """Run deterministic cleaning/chunking/embedding/storage pipeline."""
+        print("\n[Deterministic] Starting cleaning, chunking, and storage...")
+
+        run_id = f"run_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        run_dir = Path(f"./artifacts/{run_id}")
+        run_dir.mkdir(parents=True, exist_ok=True)
+
+        docs_dir = run_dir / "documents"
+        docs_dir.mkdir(parents=True, exist_ok=True)
+
+        chroma_dir = run_dir / "chroma.db"
+
+        cleaner = DocumentCleaner()
+        chunker = DocumentChunker()
+        store = ChromaKBStore(persist_directory=str(chroma_dir))
+
+        cleaned_docs: list[CleanDocument] = []
+        filtered_count = 0
+
+        for doc in self.scraped_docs:
+            cleaned = cleaner.clean(doc)
+            if cleaned.status == "cleaned":
+                cleaned_docs.append(cleaned)
+            else:
+                filtered_count += 1
+                print(
+                    f"[Deterministic] Filtered {cleaned.filter_reason}: {cleaned.source_url}"
+                )
+
+        print(
+            f"[Deterministic] Cleaned: {len(cleaned_docs)}, Filtered: {filtered_count}"
+        )
+
+        for doc in cleaned_docs:
+            if doc.document_id and doc.cleaned_text:
+                filename = f"{doc.document_id}.md"
+                filepath = docs_dir / filename
+                content = f"""---
+title: {doc.title or "Untitled"}
+source_url: {doc.source_url}
+cleaned_at: {doc.cleaned_at.isoformat()}
+---
+
+{doc.cleaned_text}
+"""
+                filepath.write_text(content)
+
+        print(f"[Deterministic] Saved {len(cleaned_docs)} markdown files to {docs_dir}")
+
+        all_chunks: list[ChunkRecord] = []
+        total_chunks = 0
+        if cleaned_docs:
+            chunks = chunker.chunk(cleaned_docs)
+            all_chunks.extend(chunks)
+            total_chunks = len(chunks)
+
+        print(f"[Deterministic] Created {total_chunks} chunks")
+
+        if all_chunks:
+            store.add_chunks(all_chunks)
+            print(f"[Deterministic] Stored {len(all_chunks)} chunks in ChromaDB")
+
+        summary = PipelineRunSummary(
+            run_id=run_id,
+            topic=self.topic,
+            start_time=datetime.now(),
+            end_time=datetime.now(),
+            metrics={
+                "documents_scraped": len(self.scraped_docs),
+                "documents_cleaned": len(cleaned_docs),
+                "documents_filtered": filtered_count,
+                "chunks_created": total_chunks,
+                "chunks_stored": len(all_chunks),
+                "markdown_files_saved": len(cleaned_docs),
+            },
+        )
+
+        summary_path = run_dir / "summary.json"
+        summary_path.write_text(summary.model_dump_json(indent=2))
+        print(f"[Deterministic] Run summary written to {summary_path}")
+
+        return summary
+
     def run(self, topic: str, current_year: str = "2026") -> str:
         """Execute the workflow."""
         self.topic = topic
@@ -326,6 +431,7 @@ Do you want to proceed with this plan anyway?
         self.revision_attempts = 0
         self.workflow_aborted = False
         self.human_approved = False
+        self.current_summary: Optional[PipelineRunSummary] = None
 
         print(f"\n{'=' * 60}")
         print(f"Starting KBB Workflow: {topic}")
@@ -337,6 +443,8 @@ Do you want to proceed with this plan anyway?
             return "Workflow aborted by user."
 
         self._execute_research_phase()
+
+        self.current_summary = self._execute_deterministic_phase()
 
         if not self.workflow_aborted:
             self._execute_reporting_phase()
@@ -363,7 +471,7 @@ Do you want to proceed with this plan anyway?
 
             if not self.current_plan:
                 raise ValueError("Failed to create research plan")
-            
+
             scraped = self._scraper_task(urls=self.current_plan.search_queries)
 
             full_plan = ResearchPlanWithScrapedDocuments(
@@ -372,7 +480,9 @@ Do you want to proceed with this plan anyway?
                 subtopics=self.current_plan.subtopics,
                 search_queries=self.current_plan.search_queries,
                 source_expectations=self.current_plan.source_expectations,
-                scraped_documents=scraped.documents if isinstance(scraped, ScrapedDocumentList) else [],
+                scraped_documents=scraped.documents
+                if isinstance(scraped, ScrapedDocumentList)
+                else [],
             )
 
             review = self._run_plan_review_task(full_plan)

@@ -26,7 +26,7 @@ class TestDocumentChunker(unittest.TestCase):
         result = self.chunker.chunk([doc])
 
         self.assertEqual(len(result), 1)
-        self.assertEqual(result[0].document_id, "example-com-article")
+        self.assertEqual(result[0].document_id, "example-com-article_ch_0")
         self.assertIn("This is some content", result[0].chunk_text)
 
     @patch("kbb.tools.chunking.get_config")
@@ -157,7 +157,7 @@ class TestDocumentChunker(unittest.TestCase):
         )
         result = chunker.chunk([doc])
 
-        self.assertEqual(result[0].document_id, "example.com-path-to-page")
+        self.assertEqual(result[0].document_id, "example.com-path-to-page_ch_0")
 
     @patch("kbb.tools.chunking.get_config")
     def test_uses_provided_document_id(self, mock_config):
@@ -172,7 +172,7 @@ class TestDocumentChunker(unittest.TestCase):
         )
         result = self.chunker.chunk([doc])
 
-        self.assertEqual(result[0].document_id, "custom-doc-id")
+        self.assertEqual(result[0].document_id, "custom-doc-id_ch_0")
 
     @patch("kbb.tools.chunking.get_config")
     def test_multiple_documents(self, mock_config):
@@ -196,8 +196,8 @@ class TestDocumentChunker(unittest.TestCase):
         result = self.chunker.chunk([doc1, doc2])
 
         self.assertEqual(len(result), 2)
-        self.assertEqual(result[0].document_id, "doc-1")
-        self.assertEqual(result[1].document_id, "doc-2")
+        self.assertEqual(result[0].document_id, "doc-1_ch_0")
+        self.assertEqual(result[1].document_id, "doc-2_ch_0")
 
     @patch("kbb.tools.chunking.get_config")
     def test_zero_overlap_no_overlap_applied(self, mock_config):
