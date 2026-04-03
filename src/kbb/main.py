@@ -7,45 +7,46 @@ from datetime import datetime
 import typer
 
 from kbb.config import get_config
-from kbb.crew import Kbb
+from kbb.crew import KbbFlow
 
 
 warnings.filterwarnings("ignore", category=SyntaxWarning, module="pysbd")
 
 app = typer.Typer()
 
+
 @app.command()
 def run(
     topic: str = typer.Option(..., "--topic", help="The research topic to explore"),
+    rubric: str = typer.Option("", "--rubric", help="Path to rubric YAML file"),
     verbose: bool = typer.Option(False, "--verbose", help="Enable verbose output"),
     log_level: str = typer.Option("info", "--log-level", help="Set the logging level"),
     collection: str = typer.Option(None, "--collection", help="Specify the collection"),
-    max_sources: int = typer.Option(5, "--max-sources", help="Maximum number of sources"),
-    rubric: str = typer.Option(None, "--rubric", help="Specify the rubric"),
-    current_year: str = typer.Option(str(datetime.now().year), "--current-year", help="Specify the current year")
+    max_sources: int = typer.Option(
+        5, "--max-sources", help="Maximum number of sources"
+    ),
+    current_year: str = typer.Option(
+        str(datetime.now().year), "--current-year", help="Specify the current year"
+    ),
 ):
     """
     Run the crew.
     """
     get_config()  # Validate config on startup
 
-    inputs = {
-        "topic": topic,
-        "verbose": verbose,
-        "log_level": log_level,
-        "collection": collection,
-        "max_sources": max_sources,
-        "rubric": rubric,
-        "current_year": current_year,
-    }
-
     if verbose:
-        print(f"[DEBUG] Running with inputs: {inputs}")
-
-    inputs = {"topic": topic, "current_year": current_year}
+        print(f"[DEBUG] Running with topic: {topic}")
+        if rubric:
+            print(f"[DEBUG] Using rubric: {rubric}")
 
     try:
-        Kbb().crew().kickoff(inputs=inputs)
+        result = KbbFlow(rubric_path=rubric).kickoff(
+            {
+                "topic": topic,
+                "current_year": current_year,
+            }
+        )
+        print(result)
     except Exception as e:
         raise Exception(f"An error occurred while running the crew: {e}")
 
@@ -56,9 +57,7 @@ def train():
     """
     inputs = {"topic": "AI LLMs", "current_year": str(datetime.now().year)}
     try:
-        Kbb().crew().train(
-            n_iterations=int(sys.argv[1]), filename=sys.argv[2], inputs=inputs
-        )
+        KbbFlow().kickoff(inputs=inputs)
 
     except Exception as e:
         raise Exception(f"An error occurred while training the crew: {e}")
@@ -69,7 +68,7 @@ def replay():
     Replay the crew execution from a specific task.
     """
     try:
-        Kbb().crew().replay(task_id=sys.argv[1])
+        KbbFlow().kickoff(inputs={})
 
     except Exception as e:
         raise Exception(f"An error occurred while replaying the crew: {e}")
@@ -82,9 +81,7 @@ def test():
     inputs = {"topic": "AI LLMs", "current_year": str(datetime.now().year)}
 
     try:
-        Kbb().crew().test(
-            n_iterations=int(sys.argv[1]), eval_llm=sys.argv[2], inputs=inputs
-        )
+        KbbFlow().kickoff(inputs=inputs)
 
     except Exception as e:
         raise Exception(f"An error occurred while testing the crew: {e}")
@@ -113,7 +110,7 @@ def run_with_trigger():
     }
 
     try:
-        result = Kbb().crew().kickoff(inputs=inputs)
+        result = KbbFlow().kickoff(inputs=inputs)
         return result
     except Exception as e:
         raise Exception(f"An error occurred while running the crew with trigger: {e}")

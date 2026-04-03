@@ -14,8 +14,20 @@ class ResearchPlan(BaseModel):
     """A plan outlining how to research a given topic."""
 
     topic: str = Field(..., description="The main research topic")
+    objectives: List[str] = Field(
+        default_factory=list,
+        description="List of research objectives for this topic",
+    )
+    subtopics: List[str] = Field(
+        default_factory=list,
+        description="List of subtopics to explore",
+    )
     search_queries: List[str] = Field(
         default_factory=list, description="List of search queries to explore"
+    )
+    source_expectations: str = Field(
+        default="",
+        description="Expected source types and quality criteria",
     )
     created_at: datetime = Field(
         default_factory=_utc_now, description="Timestamp of plan creation"
@@ -36,10 +48,31 @@ class SourceReview(BaseModel):
     """Review outcome for a candidate source after SME validation."""
 
     source_url: str = Field(..., description="URL of the reviewed source")
+    title: Optional[str] = Field(None, description="Title of the source for context")
     decision: str = Field(
         ..., description="Review decision, e.g., 'approved' or 'rejected'"
     )
-    rationale: Optional[str] = Field(None, description="Explanation for the decision")
+    rationale: str = Field(..., description="Explicit explanation for the decision")
+    rubric_criteria_considered: List[str] = Field(
+        default_factory=list,
+        description="List of rubric criteria considered in the review",
+    )
+    reviewed_at: datetime = Field(
+        default_factory=_utc_now, description="When the review was performed"
+    )
+
+
+class PlanReview(BaseModel):
+    """Review outcome for a research plan after SME validation."""
+
+    decision: str = Field(
+        ..., description="Review decision: 'approved' or 'revision_requested'"
+    )
+    rationale: str = Field(..., description="Explicit explanation for the decision")
+    concerns: List[str] = Field(
+        default_factory=list,
+        description="Specific issues to address if revision requested",
+    )
     reviewed_at: datetime = Field(
         default_factory=_utc_now, description="When the review was performed"
     )
