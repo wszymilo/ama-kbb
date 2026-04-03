@@ -467,11 +467,39 @@ Risk mitigation
     keep one shallow feedback loop only
     prioritize one deterministic happy path over broad feature coverage
 
+## Query Interface
+
+### Gradio Web UI
+
+A user-friendly web interface for querying the generated knowledge base.
+
+**Installation:**
+```bash
+pip install -r requirements.txt  # includes gradio>=4.0.0
+```
+
+**Usage:**
+```bash
+python gradio_ui.py
+# Opens on http://localhost:7860
+
+# Custom options:
+python gradio_ui.py --persist-dir ./chroma_db --port 8080 --share
+```
+
+**Features:**
+- Natural language queries with nomic-embed-text-v1.5 embeddings
+- Collection selection and listing
+- Adjustable result count (top-k slider: 1-20)
+- Preview or full content display
+- Formatted results with similarity scores and source URLs
+
+**Note:** Requires storage module from Issues #18/19 (see PR #32).
+
 Future Extensions
 
 If time permits or after the POC, we may add:
 
-    lightweight web UI
     richer source credibility heuristics
     support for multiple rubrics per domain
     citation-aware answer generation
