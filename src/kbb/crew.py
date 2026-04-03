@@ -8,7 +8,7 @@ from crewai import Agent, Task
 
 from kbb.tools.search import search
 from kbb.tools.rubric_loader import get_rubric_loader
-from kbb.schemas.models import ResearchPlan, PlanReview
+from kbb.schemas.models import ResearchPlan, PlanReview, ResearchPlanWithScrapedDocuments, ScrapedDocument, ScrapedDocumentList
 
 
 class KbbWorkflow:
@@ -30,6 +30,7 @@ class KbbWorkflow:
         self.current_year = "2026"
         self.current_plan: Optional[ResearchPlan] = None
         self.current_review: Optional[PlanReview] = None
+        self.scraped_docs: list[ScrapedDocument] = []
         self.human_approved = False
         self.workflow_aborted = False
 
@@ -109,6 +110,21 @@ class KbbWorkflow:
             llm=llm,
             verbose=True,
         )
+    
+    def _scraper_agent(self) -> Agent:
+        config = self._agents_config.get("scraper", {})
+        role = config.get("role", "").replace("{topic}", self.topic)
+        goal = config.get("goal", "").replace("{topic}", self.topic)
+        backstory = config.get("backstory", "").replace("{topic}", self.topic)
+        llm = config.get("llm", "gpt-4o-mini")
+
+        return Agent(
+            role=role,
+            goal=goal,
+            backstory=backstory,
+            llm=llm,
+            verbose=True,
+        )
 
     def _run_research_plan_task(self, feedback: Optional[str] = None) -> str:
         """Execute research_plan_task and return result."""
@@ -137,7 +153,7 @@ class KbbWorkflow:
             self.current_plan = ResearchPlan.model_validate(result.pydantic)
         return result.raw if result.raw else str(result.pydantic)
 
-    def _run_plan_review_task(self, plan: ResearchPlan) -> PlanReview:
+    def _run_plan_review_task(self, plan: ResearchPlanWithScrapedDocuments) -> PlanReview:
         """Execute plan_review_task and return result."""
         task_config = self._tasks_config.get("plan_review_task", {})
 
@@ -224,6 +240,28 @@ class KbbWorkflow:
         )
 
         result = task.execute_sync()
+        return result.raw if result.raw else str(result.pydantic)
+    
+    def _scraper_task(self, urls: list[str]) -> ScrapedDocumentList:
+        task_config = self._tasks_config.get("scraper_task", {})
+
+        description = task_config.get("description", "").replace("{topic}", self.topic).replace("{urls}", "\n".join(urls))
+
+        agent = self._scraper_agent()
+        expected_output = task_config.get("expected_output", "")
+
+        task = Task(
+            description=description,
+            expected_output=expected_output,
+            agent=agent,
+            output_pydantic=ScrapedDocumentList,
+        )
+
+        result = task.execute_sync()
+
+        if result.pydantic:
+            self.scraped_docs = result.pydantic.documents
+
         return result.raw if result.raw else str(result.pydantic)
 
     def _ask_human_decision(self) -> bool:
@@ -325,8 +363,19 @@ Do you want to proceed with this plan anyway?
 
             if not self.current_plan:
                 raise ValueError("Failed to create research plan")
+            
+            scraped = self._scraper_task(urls=self.current_plan.search_queries)
 
-            review = self._run_plan_review_task(self.current_plan)
+            full_plan = ResearchPlanWithScrapedDocuments(
+                topic=self.current_plan.topic,
+                objectives=self.current_plan.objectives,
+                subtopics=self.current_plan.subtopics,
+                search_queries=self.current_plan.search_queries,
+                source_expectations=self.current_plan.source_expectations,
+                scraped_documents=scraped.documents if isinstance(scraped, ScrapedDocumentList) else [],
+            )
+
+            review = self._run_plan_review_task(full_plan)
 
             if review.decision == "approved":
                 print("[Plan Review] Approved!")

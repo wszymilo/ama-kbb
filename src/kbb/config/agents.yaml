@@ -10,6 +10,18 @@ researcher:
     comprehensive research strategies.
   llm: gpt-4o-mini
 
+scraper:
+  role: >
+    {topic} Data Scraper
+  goal: >
+    Execute the research plan by scraping data from identified sources,
+    ensuring data quality and relevance.
+  backstory: >
+    Experienced in web scraping and data extraction, with a focus on
+    accuracy and efficiency. Skilled at navigating various data formats
+    and ensuring the integrity of collected information.
+  llm: gpt-4o-mini
+
 plan_reviewer:
   role: >
     {topic} Plan Reviewer

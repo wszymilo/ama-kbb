@@ -33,6 +33,31 @@ class ResearchPlan(BaseModel):
         default_factory=_utc_now, description="Timestamp of plan creation"
     )
 
+class ResearchPlanWithScrapedDocuments(BaseModel):
+    """A plan outlining how to research a given topic, including scraped documents."""
+
+    topic: str = Field(..., description="The main research topic")
+    objectives: List[str] = Field(
+        default_factory=list,
+        description="List of research objectives for this topic",
+    )
+    subtopics: List[str] = Field(
+        default_factory=list,
+        description="List of subtopics to explore",
+    )
+    search_queries: List[str] = Field(
+        default_factory=list, description="List of search queries to explore"
+    )
+    source_expectations: str = Field(
+        default="",
+        description="Expected source types and quality criteria",
+    )
+    created_at: datetime = Field(
+        default_factory=_utc_now, description="Timestamp of plan creation"
+    )
+    scraped_documents: List[ScrapedDocument] = Field(
+        default_factory=list, description="List of scraped documents associated with the plan"
+    )
 
 class SourceCandidate(BaseModel):
     """A potential source discovered during research."""
@@ -77,6 +102,8 @@ class PlanReview(BaseModel):
         default_factory=_utc_now, description="When the review was performed"
     )
 
+class ScrapedDocumentList(BaseModel):
+    documents: list[ScrapedDocument] = Field(..., description="List of scraped documents")
 
 class ScrapedDocument(BaseModel):
     """Result of fetching the content of an approved source."""
@@ -93,6 +120,9 @@ class ScrapedDocument(BaseModel):
     )
     fetched_at: datetime = Field(
         default_factory=_utc_now, description="When the fetch occurred"
+    )
+    metadata: Dict[str, Any] = Field(
+        default_factory=dict, description="Additional metadata about the fetched document (e.g., content length, MIME type, etc.)"
     )
 
 
