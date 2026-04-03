@@ -4,20 +4,45 @@ import warnings
 
 from datetime import datetime
 
+import typer
+
 from kbb.config import get_config
 from kbb.crew import Kbb
 
 
 warnings.filterwarnings("ignore", category=SyntaxWarning, module="pysbd")
 
+app = typer.Typer()
 
-def run():
+@app.command()
+def run(
+    topic: str = typer.Option(..., "--topic", help="The research topic to explore"),
+    verbose: bool = typer.Option(False, "--verbose", help="Enable verbose output"),
+    log_level: str = typer.Option("info", "--log-level", help="Set the logging level"),
+    collection: str = typer.Option(None, "--collection", help="Specify the collection"),
+    max_sources: int = typer.Option(5, "--max-sources", help="Maximum number of sources"),
+    rubric: str = typer.Option(None, "--rubric", help="Specify the rubric"),
+    current_year: str = typer.Option(str(datetime.now().year), "--current-year", help="Specify the current year")
+):
     """
     Run the crew.
     """
     get_config()  # Validate config on startup
 
-    inputs = {"topic": "AI LLMs", "current_year": str(datetime.now().year)}
+    inputs = {
+        "topic": topic,
+        "verbose": verbose,
+        "log_level": log_level,
+        "collection": collection,
+        "max_sources": max_sources,
+        "rubric": rubric,
+        "current_year": current_year,
+    }
+
+    if verbose:
+        print(f"[DEBUG] Running with inputs: {inputs}")
+
+    inputs = {"topic": topic, "current_year": current_year}
 
     try:
         Kbb().crew().kickoff(inputs=inputs)
