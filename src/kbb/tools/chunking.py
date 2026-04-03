@@ -53,7 +53,7 @@ class DocumentChunker:
             for idx, chunk_text in enumerate(text_chunks):
                 chunks.append(
                     ChunkRecord(
-                        document_id=doc_id,
+                        document_id=f"{doc_id}_ch_{idx}",
                         chunk_text=chunk_text,
                         metadata={
                             "source_url": doc.source_url,
