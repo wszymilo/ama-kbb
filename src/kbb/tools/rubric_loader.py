@@ -31,6 +31,9 @@ class RubricLoader:
             FileNotFoundError: If rubric file doesn't exist
             ValueError: If rubric file is invalid/missing required fields
         """
+        if not path:
+            return {}
+
         if path in self._cache:
             logger.debug(f"Returning cached rubric: {path}")
             return self._cache[path]

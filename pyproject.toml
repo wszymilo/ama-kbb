@@ -26,8 +26,8 @@ dev = [
 ]
 
 [project.scripts]
-kbb = "kbb.main:run"
-run_crew = "kbb.main:run"
+kbb = "kbb.main:app"
+run_crew = "kbb.main:app"
 train = "kbb.main:train"
 replay = "kbb.main:replay"
 test = "kbb.main:test"

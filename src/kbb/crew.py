@@ -1,8 +1,7 @@
 """Simple Kbb workflow runner with revision loop."""
 
 import json
-import os
-from typing import Any, Optional
+from typing import Optional
 
 import yaml
 from crewai import Agent, Task
@@ -135,7 +134,7 @@ class KbbWorkflow:
         result = task.execute_sync()
 
         if result.pydantic:
-            self.current_plan = result.pydantic
+            self.current_plan = ResearchPlan.model_validate(result.pydantic)
         return result.raw if result.raw else str(result.pydantic)
 
     def _run_plan_review_task(self, plan: ResearchPlan) -> PlanReview:
@@ -160,8 +159,9 @@ class KbbWorkflow:
         result = task.execute_sync()
 
         if result.pydantic:
-            self.current_review = result.pydantic
-            return result.pydantic
+            review = PlanReview.model_validate(result.pydantic)
+            self.current_review = review
+            return review
 
         raise ValueError("Plan review did not return pydantic output")
 
@@ -321,7 +321,7 @@ Do you want to proceed with this plan anyway?
                 f"\n[Plan Review Loop] Attempt {self.revision_attempts + 1}/{self.max_revisions}"
             )
 
-            plan_result = self._run_research_plan_task(feedback=feedback)
+            self._run_research_plan_task(feedback=feedback)
 
             if not self.current_plan:
                 raise ValueError("Failed to create research plan")
@@ -351,17 +351,17 @@ Do you want to proceed with this plan anyway?
         else:
             print("\n[Research] Proceeding to research...")
 
-        research_result = self._run_research_task()
+        self._run_research_task()
         print("[Research] Research completed.")
 
         print("[Source Review] Reviewing sources...")
-        source_review_result = self._run_source_review_task()
+        self._run_source_review_task()
         print("[Source Review] Source review completed.")
 
     def _execute_reporting_phase(self):
         """Execute reporting phase."""
         print("\n[Reporting] Generating final report...")
-        report_result = self._run_reporting_task()
+        self._run_reporting_task()
         print("[Reporting] Report generated.")
 
 

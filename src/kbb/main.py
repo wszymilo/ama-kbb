@@ -7,7 +7,7 @@ from datetime import datetime
 import typer
 
 from kbb.config import get_config
-from kbb.crew import KbbFlow
+from kbb.crew import KbbWorkflow
 
 
 warnings.filterwarnings("ignore", category=SyntaxWarning, module="pysbd")
@@ -40,77 +40,79 @@ def run(
             print(f"[DEBUG] Using rubric: {rubric}")
 
     try:
-        result = KbbFlow(rubric_path=rubric).kickoff(
-            {
-                "topic": topic,
-                "current_year": current_year,
-            }
+        result = KbbWorkflow(rubric_path=rubric if rubric else "").run(
+            topic=topic,
+            current_year=str(current_year),
         )
         print(result)
     except Exception as e:
-        raise Exception(f"An error occurred while running the crew: {e}")
+        raise Exception(f"An error occurred while running the crew: {e}") from e
 
 
-def train():
+@app.command()
+def train(
+    topic: str = typer.Option("AI LLMs", "--topic", help="The research topic"),
+    current_year: str = typer.Option(str(datetime.now().year), "--current-year"),
+):
     """
     Train the crew for a given number of iterations.
     """
-    inputs = {"topic": "AI LLMs", "current_year": str(datetime.now().year)}
     try:
-        KbbFlow().kickoff(inputs=inputs)
-
+        KbbWorkflow().run(topic=topic, current_year=str(current_year))
     except Exception as e:
-        raise Exception(f"An error occurred while training the crew: {e}")
+        raise Exception(f"An error occurred while training the crew: {e}") from e
 
 
-def replay():
+@app.command()
+def replay(
+    topic: str = typer.Option("", "--topic", help="The research topic"),
+    current_year: str = typer.Option(str(datetime.now().year), "--current-year"),
+):
     """
     Replay the crew execution from a specific task.
     """
     try:
-        KbbFlow().kickoff(inputs={})
-
+        KbbWorkflow().run(topic=topic, current_year=str(current_year))
     except Exception as e:
-        raise Exception(f"An error occurred while replaying the crew: {e}")
+        raise Exception(f"An error occurred while replaying the crew: {e}") from e
 
 
-def test():
+@app.command()
+def test(
+    topic: str = typer.Option("AI LLMs", "--topic", help="The research topic"),
+    current_year: str = typer.Option(str(datetime.now().year), "--current-year"),
+):
     """
     Test the crew execution and returns the results.
     """
-    inputs = {"topic": "AI LLMs", "current_year": str(datetime.now().year)}
-
     try:
-        KbbFlow().kickoff(inputs=inputs)
-
+        KbbWorkflow().run(topic=topic, current_year=str(current_year))
     except Exception as e:
-        raise Exception(f"An error occurred while testing the crew: {e}")
+        raise Exception(f"An error occurred while testing the crew: {e}") from e
 
 
-def run_with_trigger():
+@app.command()
+def run_with_trigger(
+    payload: str = typer.Option(..., "--payload", help="JSON payload"),
+):
     """
     Run the crew with trigger payload.
     """
     import json
 
-    if len(sys.argv) < 2:
-        raise Exception(
-            "No trigger payload provided. Please provide JSON payload as argument."
-        )
-
     try:
-        trigger_payload = json.loads(sys.argv[1])
+        trigger_payload = json.loads(payload)
     except json.JSONDecodeError:
-        raise Exception("Invalid JSON payload provided as argument")
-
-    inputs = {
-        "crewai_trigger_payload": trigger_payload,
-        "topic": "",
-        "current_year": "",
-    }
+        raise Exception("Invalid JSON payload provided")
 
     try:
-        result = KbbFlow().kickoff(inputs=inputs)
+        result = KbbWorkflow().run(topic="", current_year="")
         return result
     except Exception as e:
-        raise Exception(f"An error occurred while running the crew with trigger: {e}")
+        raise Exception(
+            f"An error occurred while running the crew with trigger: {e}"
+        ) from e
+
+
+if __name__ == "__main__":
+    app()
