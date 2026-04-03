@@ -7,6 +7,60 @@ research_task:
     A list with 10 bullet points of the most relevant information about {topic}
   agent: researcher
 
+research_plan_task:
+  description: >
+    Create a detailed research plan for {topic}.
+    Include: clear objectives, 5-10 subtopics, search queries (5-10),
+    and source quality expectations (types of sources preferred).
+  expected_output: >
+    A structured ResearchPlan with the following fields:
+    - objectives: List of research objectives
+    - subtopics: List of subtopics to explore
+    - search_queries: List of 5-10 search queries
+    - source_expectations: Description of expected source types and quality
+  agent: researcher
+
+scraper_task:
+  description: >
+    Execute the research plan by scraping data from identified {urls}.
+    Ensure data quality and relevance to the research objectives.
+  expected_output: >
+    A list of ScrapedDocument objects, each containing:
+    - source_url: URL of the scraped source
+    - title: Title of the source (if available)
+    - fetch_status: 'success' or 'failure'
+    - content: Main content extracted from the source
+    - fetched_at: Timestamp of when the source was scraped
+    - metadata: Any relevant metadata (e.g., publication date, author)
+  agent: scraper
+
+plan_review_task:
+  description: >
+    Review the research plan against the domain rubric.
+    Evaluate: objectives clarity, subtopics coverage, search query quality,
+    source expectations appropriateness.
+    You MUST provide explicit rationale for your decision.
+  expected_output: >
+    A PlanReview with:
+    - decision: 'approved' or 'revision_requested'
+    - rationale: explicit explanation for the decision
+    - concerns: list of specific issues if revision_requested
+  agent: plan_reviewer
+
+source_review_task:
+  description: >
+    Review each source candidate against the domain rubric.
+    Evaluate: source type, recency, credibility, terminology match.
+    You MUST provide explicit rationale for each approval/rejection.
+  expected_output: >
+    A list of SourceReview objects, one per source candidate, with:
+    - source_url: URL of the source
+    - title: title of the source (if available)
+    - decision: 'approved' or 'rejected'
+    - rationale: explicit reasoning for the decision
+    - rubric_criteria_considered: list of criteria from the rubric used
+  agent: source_reviewer
+
 reporting_task:
   description: >
     Review the context you got and expand each topic into a full section for a report.

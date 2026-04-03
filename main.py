@@ -1,1 +1,4 @@
-# Placeholder for real code - to be added later
+from kbb.main import app
+
+if __name__ == "__main__":
+    app()
