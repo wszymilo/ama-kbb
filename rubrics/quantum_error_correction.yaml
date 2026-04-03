@@ -9,8 +9,8 @@ preferred_institutions_publishers:
   - "IEEE Quantum"
   - "arXiv"
 disallowed_source_patterns:
-  - "\.pdf$"  # Avoid raw PDFs without metadata
-  - "blog\.com"
+  - '\.pdf$'  # Avoid raw PDFs without metadata
+  - 'blog\.com'
 recency_expectations: "sources published within the last 5 years"
 key_terminology:
   - "surface code"

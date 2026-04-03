@@ -1,48 +1,59 @@
-import json
+"""Canonical CrewAI search tool using Serper."""
 
-from mcp.types import TextContent
-from .base import SearchTool, SearchResult 
-from .mcp_client_manager import MCPClientManager
+import os
+
+from crewai.tools import tool
 
 
-class SerperSearchTool(SearchTool):
-    ''' Search tool using serper-toolkit MCP server. '''
+@tool("search")
+def search(query: str, num_results: int = 10) -> str:
+    """
+    Search the web for information using Google search via Serper.
 
-    def __init__(self, mcp_client: MCPClientManager, server_name: str = 'serper'):
-        self.client = mcp_client
-        self.server_name = server_name
+    Args:
+        query: The search query string.
+        num_results: Maximum number of results to return (default: 10).
 
-    async def search(self, query: str, num_results: int = 10) -> list[SearchResult]:
-        ''' Execute search via serper-toolkit MCP server and return results. '''
-        result = await self.client.call_tool(
-            server_name=self.server_name,
-            tool_name='search_web',
-            arguments={
-                'query': query,
-                'search_num': num_results
-            }
-        )
+    Returns:
+        A formatted string containing search results with title, URL, and snippet.
+    """
+    api_key = os.getenv("SERPER_API_KEY")
+    if not api_key:
+        return "Error: SERPER_API_KEY environment variable not set"
 
-        if result.isError:
-            if isinstance(result, TextContent):
-                error_text = result.text
-            else:
-                error_text = str(result)
-            raise RuntimeError(f'Search tool call failed: {error_text}')
+    import httpx
 
-        text_content = [c.text for c in result.content if isinstance(c, TextContent)]
-        if not text_content:
-            raise RuntimeError(
-                'Search results did not contain any text content.')
+    url = "https://google.serper.dev/search"
+    headers = {
+        "X-API-Key": api_key,
+        "Content-Type": "application/json",
+    }
+    payload = {"q": query, "num": num_results}
 
-        data = json.loads(text_content[0])
+    try:
+        with httpx.Client(timeout=30.0) as client:
+            response = client.post(url, headers=headers, json=payload)
 
-        organic = data.get('results', [])
+            if response.status_code != 200:
+                return f"Error: Serper API returned status {response.status_code}"
 
-        return [
-            SearchResult(
-                title=item.get('title', ''),
-                url=item.get('link', ''),
-                snippet=item.get('snippet', None)
-            ) for item in organic
-        ]
+            data = response.json()
+            organic = data.get("organic", [])
+
+            if not organic:
+                return f"No results found for query: {query}"
+
+            results = []
+            for item in organic:
+                title = item.get("title", "")
+                link = item.get("link", "")
+                snippet = item.get("snippet", "")
+
+                results.append(f"Title: {title}\nURL: {link}\nSnippet: {snippet}\n")
+
+            return "\n---\n".join(results)
+
+    except httpx.TimeoutException:
+        return "Error: Serper API request timed out"
+    except Exception as e:
+        return f"Error: Failed to execute search - {str(e)}"
