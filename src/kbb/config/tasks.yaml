@@ -20,6 +20,20 @@ research_plan_task:
     - source_expectations: Description of expected source types and quality
   agent: researcher
 
+scraper_task:
+  description: >
+    Execute the research plan by scraping data from identified {urls}.
+    Ensure data quality and relevance to the research objectives.
+  expected_output: >
+    A list of ScrapedDocument objects, each containing:
+    - source_url: URL of the scraped source
+    - title: Title of the source (if available)
+    - fetch_status: 'success' or 'failure'
+    - content: Main content extracted from the source
+    - fetched_at: Timestamp of when the source was scraped
+    - metadata: Any relevant metadata (e.g., publication date, author)
+  agent: scraper
+
 plan_review_task:
   description: >
     Review the research plan against the domain rubric.

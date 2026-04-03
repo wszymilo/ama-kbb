@@ -8,7 +8,7 @@ from crewai import Agent, Task
 
 from kbb.tools.search import search
 from kbb.tools.rubric_loader import get_rubric_loader
-from kbb.schemas.models import ResearchPlan, PlanReview
+from kbb.schemas.models import ResearchPlan, PlanReview, ScrapedDocument
 
 
 class KbbWorkflow:
@@ -30,6 +30,7 @@ class KbbWorkflow:
         self.current_year = "2026"
         self.current_plan: Optional[ResearchPlan] = None
         self.current_review: Optional[PlanReview] = None
+        self.scapered_docs: list[ScrapedDocument] = []
         self.human_approved = False
         self.workflow_aborted = False
 
@@ -97,6 +98,21 @@ class KbbWorkflow:
     def _create_reporting_agent(self) -> Agent:
         """Create reporting analyst agent."""
         config = self._agents_config.get("reporting_analyst", {})
+        role = config.get("role", "").replace("{topic}", self.topic)
+        goal = config.get("goal", "").replace("{topic}", self.topic)
+        backstory = config.get("backstory", "").replace("{topic}", self.topic)
+        llm = config.get("llm", "gpt-4o-mini")
+
+        return Agent(
+            role=role,
+            goal=goal,
+            backstory=backstory,
+            llm=llm,
+            verbose=True,
+        )
+    
+    def _scraper_agent(self) -> Agent:
+        config = self._agents_config.get("scraper", {})
         role = config.get("role", "").replace("{topic}", self.topic)
         goal = config.get("goal", "").replace("{topic}", self.topic)
         backstory = config.get("backstory", "").replace("{topic}", self.topic)
@@ -224,6 +240,28 @@ class KbbWorkflow:
         )
 
         result = task.execute_sync()
+        return result.raw if result.raw else str(result.pydantic)
+    
+    def _scraper_task(self, urls: list[str]) -> list[ScrapedDocument]:
+        task_config = self._tasks_config.get("scraper_task", {})
+
+        description = task_config.get("description", "").replace("{topic}", self.topic)
+
+        agent = self._scraper_agent()
+        expected_output = task_config.get("expected_output", "")
+
+        task = Task(
+            description=description,
+            expected_output=expected_output,
+            agent=agent,
+            output_pydantic=list[ScrapedDocument],
+        )
+
+        result = task.execute_sync()
+
+        if result.pydantic:
+            self.scapered_docs = result.pydantic
+
         return result.raw if result.raw else str(result.pydantic)
 
     def _ask_human_decision(self) -> bool:
