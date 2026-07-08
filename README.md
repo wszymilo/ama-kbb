@@ -55,7 +55,7 @@ Run Summary --> JSON with metrics + markdown files
 ROOT='.'
 
 # Navigate to project directory
-cd $ROOT/kbb
+cd $ROOT
 
 # Basic run
 uv run kbb run --topic "quantum computing"
@@ -150,7 +150,7 @@ COLLECTION_NAME=kbb
 ROOT='.'
 
 # Navigate to project directory
-cd $ROOT/kbb
+cd $ROOT
 
 # Run all tests
 uv run pytest
@@ -169,7 +169,7 @@ uv run pytest --cov=src --cov-report=term-missing
 ROOT='.'
 
 # Navigate to project directory
-cd $ROOT/kbb
+cd $ROOT
 
 # Ruff linting
 uv run ruff check src/
