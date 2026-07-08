@@ -51,8 +51,11 @@ Run Summary --> JSON with metrics + markdown files
 ## CLI Usage
 
 ```bash
+# Project root
+ROOT='.'
+
 # Navigate to project directory
-cd /home/wszymilo/code/PY/andela/group-projects/ama-kbb/kbb
+cd $ROOT/kbb
 
 # Basic run
 uv run kbb run --topic "quantum computing"
@@ -143,7 +146,11 @@ COLLECTION_NAME=kbb
 ## Testing
 
 ```bash
-cd /home/wszymilo/code/PY/andela/group-projects/ama-kbb/kbb
+# Project root
+ROOT='.'
+
+# Navigate to project directory
+cd $ROOT/kbb
 
 # Run all tests
 uv run pytest
@@ -158,7 +165,11 @@ uv run pytest --cov=src --cov-report=term-missing
 ## Linting
 
 ```bash
-cd /home/wszymilo/code/PY/andela/group-projects/ama-kbb/kbb
+# Project root
+ROOT='.'
+
+# Navigate to project directory
+cd $ROOT/kbb
 
 # Ruff linting
 uv run ruff check src/
